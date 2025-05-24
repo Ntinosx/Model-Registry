@@ -54,6 +54,12 @@ jobs:
           exit 1
         fi
 
+    # Test fetching all models
+    - name: Test GET /models
+      run: |
+        response=$(curl --silent http://localhost:8000/models)
+        echo "Response: $response"
+
     # Test fetching a non-existing model
     - name: Test GET /models/non_existing_model
       run: |

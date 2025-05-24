@@ -1,66 +1,38 @@
-**Project Structure & Summary**
+ **Project Structure & Summary**
 
-**main.py**
-FastAPI app with endpoints:
-POST /models: Uploads model file (.pkl) + metadata (name, version, accuracy). Saves file and metadata in PostgreSQL.
-GET /models: Returns metadata of all uploaded models.
-GET /models/{name}: Returns metadata of a specific model by name.
+| File/Folder            | Description                                                                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **main.py**            | FastAPI app with endpoints: POST /models: Upload model file + metadata (name, version, accuracy), GET /models: Return metadata of all uploaded models. GET /models/{name}: Return metadata of a specific model.                      |
+| **models.py**          | SQLAlchemy ORM definitions for the `Model` metadata table.                                                                                                                                                                           |
+| **crud.py**            | Database helper functions to create and retrieve model metadata.                                                                                                                                                                     |
+| **database.py**        | PostgreSQL database connection setup and session management.                                                                                                                                                                         |
+| **Dockerfile**         | Builds the FastAPI app container: Uses Python 3.11 slim image. Installs dependencies. Copies app files. Creates `models/` directory. Runs the app on port 8000 using uvicorn.                                                        |
+| **docker-compose.yml** | Defines two services: **db**: PostgreSQL container with persistent volume and env setup. **api**: FastAPI container depending on db, exposing port 8000, sharing a local models folder.                                              |
 
-**models.py**
-SQLAlchemy ORM model definitions for the Model metadata table.
 
-**crud.py**
-Database functions to create and retrieve model metadata entries.
-
-**database.py**
-Database connection setup and session management for PostgreSQL.
-
-**Dockerfile**
-Containerizes the FastAPI app:
-Uses Python 3.11 slim image.
-Installs dependencies from requirements.txt.
-Copies app files.
-Creates a models/ directory to store uploaded models.
-Runs the app using uvicorn on port 8000.
-
-**docker-compose.yml**
-Defines two services:
-
-**db:** PostgreSQL container with volume for data persistence and environment variables for user/db setup.
-**api:** FastAPI app container that depends on db, exposes port 8000, mounts a local models/ folder for model files, and shares database connection info via environment variables.
-FastAPI app with endpoints:
-
-**Build and start containers:**
-
+** How to Build and Start Containers**
 docker-compose up --build
 
 
-How to Create a Test Model and Upload
-Create a dummy .pkl file using Python:
+**CI/CD Pipeline**
+ This project uses GitHub Actions to automate testing and deployment.
 
-Create a file create_test_model.py with:
+Pipeline Overview
+On every push or pull request to the main branch, the workflow: 
 
-import pickle
+**Builds & starts services**
+Uses the Dockerfile and docker-compose.yml to spin up the db and api containers.
 
-dummy_model = {"model": "test"}
-with open("test_model.pkl", "wb") as f:
-    pickle.dump(dummy_model, f)
-print("test_model.pkl created!")
+ **Tests the API**
+Runs a Python script that creates test_model.pkl.
+Uploads the test model using the POST /models endpoint.
+ Sends GET requests to:
+Check the uploaded model (/models/{name}).
+Verify the system handles non-existing models (expects a 404).
 
+ **Archives logs**
+Collects Docker Compose logs.
+Uploads logs as artifacts for troubleshooting.
 
-python create_test_model.py
-
-This generates test_model.pkl in the current directory.
-
-Upload the test model using curl:
-
-curl -X POST "http://localhost:8000/models" \
-  -F "name=test_model" \
-  -F "version=1.0" \
-  -F "accuracy=0.95" \
-  -F "file=@test_model.pkl"
-  
-Check uploaded models metadata:
-
-curl http://localhost:8000/models
-
+**Cleans up**
+Shuts down all Docker containers to leave a clean environment.

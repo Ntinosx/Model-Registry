@@ -31,7 +31,8 @@ services:
       POSTGRES_DB: modeldb
       POSTGRES_HOST: db
     volumes:
-      - /model-registry/models:/app/models
+      - model_data:/app/models
 
 volumes:
   db_data:
+  model_data:

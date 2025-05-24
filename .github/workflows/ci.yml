@@ -33,11 +33,9 @@ jobs:
 
     # Run Python script to create test model .pkl
     - name: Create test model file
-      run: |
-        python model_registry/test_model_creation_script.py
+      run: python Model-Registry/test_model_creation_script.py
       # This will generate test_model.pkl in the runner’s workspace
 
-    # Upload the test model to the API
     - name: Upload test model to API
       run: |
         curl -X POST "http://localhost:8000/models" \

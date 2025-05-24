@@ -33,7 +33,7 @@ jobs:
 
     # Run Python script to create test model .pkl
     - name: Create test model file
-      run: python Model-Registry/test_model_creation_script.py
+      run: python3 test_model_creation_script.py
       # This will generate test_model.pkl in the runner’s workspace
 
     - name: Upload test model to API

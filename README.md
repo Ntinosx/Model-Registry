@@ -10,10 +10,6 @@
 | **docker-compose.yml** | Defines two services: **db**: PostgreSQL container with persistent volume and env setup. **api**: FastAPI container depending on db, exposing port 8000, sharing a local models folder.                                              |
 
 
-**How to Build and Start Containers manually**
-
-  docker-compose up --build
-
 
 
 **CI/CD Pipeline**
@@ -26,3 +22,9 @@
 | **Test API**      | Runs Python scripts that create test_model1-2.pkl.Uploads the models using the `POST /models` endpoint. Sends GET requests to:Retrieve the uploaded model (`/models/{name}`) and (/models/).Verify that a non-existing model returns a 404.          |
 | **Archive Logs**  | Collects Docker Compose logs from the test run.Uploads the logs as GitHub Action artifacts for later troubleshooting.                                                                                                                            |
 | **Clean Up**      | Shuts down and removes all Docker containers to leave the environment clean after the run.                                                                                                                                                           |
+
+
+
+**How to Build and Start Containers manually**
+
+  docker-compose up --build

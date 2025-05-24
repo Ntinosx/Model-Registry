@@ -1,0 +1,85 @@
+name: CI Workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Build and start Docker Compose services
+    - name: Build and start containers
+      run: docker compose up -d --build
+
+    # Wait for API service to become healthy (max 10 retries, 5s apart)
+    - name: Wait for API to become ready
+      run: |
+        for i in {1..10}; do
+          if curl --silent http://localhost:8000/docs; then
+            echo "API is up"
+            break
+          fi
+          echo "Waiting for API... ($i)"
+          sleep 5
+        done
+
+    # Run Python script to create test model .pkl
+    - name: Create test model file
+      run: |
+        python model_registry/test_model_creation_script.py
+      # This will generate test_model.pkl in the runner’s workspace
+
+    # Upload the test model to the API
+    - name: Upload test model to API
+      run: |
+        curl -X POST "http://localhost:8000/models" \
+          -F "name=test_model3" \
+          -F "version=1.0" \
+          -F "accuracy=0.95" \
+          -F "file=@test_model.pkl"
+
+    # Test fetching the uploaded model
+    - name: Test GET /models/test_model3
+      run: |
+        response=$(curl --silent http://localhost:8000/models/test_model3)
+        echo "Response: $response"
+        if [[ $response != *"test_model3"* ]]; then
+          echo "Model not found in response!"
+          exit 1
+        fi
+
+    # Test fetching a non-existing model
+    - name: Test GET /models/non_existing_model
+      run: |
+        status_code=$(curl --silent --output /dev/null --write-out "%{http_code}" http://localhost:8000/models/non_existing_model)
+        echo "Status code: $status_code"
+        if [ "$status_code" -ne 404 ]; then
+          echo "Expected 404 for non-existing model, got $status_code"
+          exit 1
+        fi
+
+    # Collect Docker Compose logs for troubleshooting (always runs, even if previous steps fail)
+    - name: Archive Docker logs
+      if: always()
+      run: docker compose logs > docker-compose-logs.txt
+
+    # Upload logs as workflow artifacts
+    - name: Upload logs as artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-logs
+        path: docker-compose-logs.txt
+
+    # Tear down Docker Compose services (always runs)
+    - name: Stop Docker Compose
+      if: always()
+      run: docker compose down

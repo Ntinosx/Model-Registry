@@ -39,17 +39,25 @@ jobs:
     - name: Upload test model to API
       run: |
         curl -X POST "http://localhost:8000/models" \
-          -F "name=test_model3" \
+          -F "name=test_model1" \
           -F "version=1.0" \
           -F "accuracy=0.95" \
           -F "file=@test_model.pkl"
 
-    # Test fetching the uploaded model
-    - name: Test GET /models/test_model3
+    - name: Upload another test model to API
       run: |
-        response=$(curl --silent http://localhost:8000/models/test_model3)
+        curl -X POST "http://localhost:8000/models" \
+          -F "name=test_model2" \
+          -F "version=2.0" \
+          -F "accuracy=0.85" \
+          -F "file=@test_model.pkl"
+          
+    # Test fetching the uploaded model
+    - name: Test GET /models/test_model1
+      run: |
+        response=$(curl --silent http://localhost:8000/models/test_model1)
         echo "Response: $response"
-        if [[ $response != *"test_model3"* ]]; then
+        if [[ $response != *"test_model1"* ]]; then
           echo "Model not found in response!"
           exit 1
         fi
